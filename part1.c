@@ -16,12 +16,17 @@
 #include "string_parser.h"
 
 #define LENGTH 512
+#define MAXQUEUES 128
 
 int main()
 {
-  struct topicQueue TQ;
-  if (init(&TQ, 512))
-    printf("Error initializing topic queue.\n");
+  struct topicQueue TQarry[MAXQUEUES];
+
+  init(&TQarry[0], LENGTH, "test topic");
+
+  struct topicEntry test = {.pubID = 5};
+
+  enqueue(&TQarry[0], &test);
 
 
 
