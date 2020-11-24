@@ -1,10 +1,11 @@
 //stores given topicEntry struct and the topicQueue of topicEntries
 #include <sys/time.h>
-#include <stdio.h>
+#include <pthread.h>
 
 #define URLSIZE 1024
 #define CAPSIZE 256
 #define MAXNAME 50
+#define MAXQENTRIES 10
 
 struct topicEntry{
   int entryNum;
@@ -19,11 +20,13 @@ struct topicQueue{
   struct topicEntry *buffer;
   int head;
   int tail;
-  int length;
+  pthread_mutex_t mutex;
 };
 
-int init(struct topicQueue *TQ, int length, char *name);
+int init(struct topicQueue *TQ, char *name);
 
 int enqueue(struct topicQueue *TQ, struct topicEntry *TE);
 
-int dequeue(struct topicQueue *TQ, struct topicEntry *TE);
+void dequeue(struct topicQueue *TQ);
+
+int getEntry(struct topicQueue *TQ, struct topicEntry *TE, int lastEntry);
