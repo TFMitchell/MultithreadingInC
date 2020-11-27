@@ -16,6 +16,11 @@ int init(struct topicQueue *TQ, char *name)
   return 0;
 }
 
+void tqFree(struct topicQueue *TQ)
+{
+  free(TQ->buffer);
+}
+
 
 int enqueue(struct topicQueue *TQ, struct topicEntry *TE)
 {

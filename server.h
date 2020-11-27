@@ -4,20 +4,19 @@
 #define NUMPROXIES 50
 
 
-struct threadEntry{
-  pthread_t id;
-  char free;
-
+struct pubThread{
+    struct topicQueue *TQ;
+    pthread_t id;
+    char free;
+    char *test;
+    pthread_cond_t wait;
 };
 
-struct pubARGS{
+struct subThread{
     struct topicQueue *TQ;
-    char *test;
-};
-
-struct subARGS{
-    struct topicQueue *TQ;
-    char *test;
+    pthread_t id;
+    char free;
+    pthread_cond_t wait;
 };
 
 struct cleanARGS{

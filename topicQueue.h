@@ -25,6 +25,8 @@ struct topicQueue{
 
 int init(struct topicQueue *TQ, char *name);
 
+void tqFree(struct topicQueue *TQ);
+
 int enqueue(struct topicQueue *TQ, struct topicEntry *TE);
 
 void dequeue(struct topicQueue *TQ);
