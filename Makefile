@@ -1,2 +1,2 @@
 all:
-	gcc -pthread -g topicQueue.h topicQueue.c string_parser.h string_parser.c server.h server.c -o quacker
+	gcc -pthread -g topicQueue.h topicQueue.c inputHandler.c inputHandler.h server.h server.c -o quacker

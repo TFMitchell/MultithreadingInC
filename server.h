@@ -1,25 +1,9 @@
 #include <pthread.h>
-#include "topicQueue.h"
-
-#define NUMPROXIES 50
+#include "inputHandler.h"
 
 
-struct pubThread{
-    struct topicQueue *TQ;
-    pthread_t id;
-    char free;
-    char *test;
-    pthread_cond_t wait;
-};
+void *publisher(void *args);
 
-struct subThread{
-    struct topicQueue *TQ;
-    pthread_t id;
-    char free;
-    pthread_cond_t wait;
-};
+void *subscriber(void *args);
 
-struct cleanARGS{
-    struct topicQueue *TQ;
-    char *test;
-};
+void *cleaner(void *args);

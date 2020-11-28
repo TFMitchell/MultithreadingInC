@@ -17,14 +17,13 @@
 #include <signal.h>
 #include "server.h"
 
-#define MAXQTOPICS 128
+#define MAXLINE 256
 
-char done = 0;
-pthread_mutex_t mainMTX = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+char done = 0; //global to signal to all threads easily
+pthread_mutex_t mainMTX = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER; //used for conditional waiting (to make sure threads start at the same time)
 
 void *publisher(void *args)
 {
-
   struct pubThread *threadInfo = (struct pubThread*) args; //no more need to cast when dereferencing
 
   //wait to start
@@ -34,12 +33,12 @@ void *publisher(void *args)
 
   while (!done) //while not done
   {
-    threadInfo->free = 0; //we're busy now
     struct topicEntry tmpEntry; //make the entry that needs to be enqueued
-    strcpy(tmpEntry.photoCaption, threadInfo->test); //fill in the information
+    //strcpy(tmpEntry.photoCaption, threadInfo->test); //fill in the information
 
-    enqueue(threadInfo->TQ, &tmpEntry); // enqueue it
+    threadInfo->currentQueueID = 0;
 
+    enqueue( &(threadInfo->TQ[threadInfo->currentQueueID]) , &tmpEntry); // enqueue it
 
     threadInfo->free = 1; //this thread is now free
 
@@ -65,13 +64,11 @@ void *subscriber(void *args)
 
   while (!done) //while not done
   {
-    threadInfo->free = 0; //we're busy now
     struct topicEntry tmpEntry; //empty entry that will be returned
 
-    getEntry(threadInfo->TQ, &tmpEntry, 0); // get the entry back
+    threadInfo->currentQueueID = 0;
 
-    printf("Caption: %s\n", tmpEntry.photoCaption);
-    fflush(stdout);
+    getEntry( &(threadInfo->TQ[threadInfo->currentQueueID]) , &tmpEntry, 0); // get the entry back
 
     threadInfo->free = 1; //this thread is now free
 
@@ -84,39 +81,60 @@ void *subscriber(void *args)
   }
 
   return NULL; //end
-
 }
 
 void *cleaner(void *args)
 {
+  int i;
+  struct cleanThread *threadInfo = (struct cleanThread*) args; //no more need to cast when dereferencing
 
+  //wait to start
+  pthread_mutex_lock(&mainMTX);
+  pthread_cond_wait(& (threadInfo->wait), &mainMTX);
+  pthread_mutex_unlock(&mainMTX);
+
+  while (!done)
+  {
+    for (i = 0; i < MAXQTOPICS; i++)
+    {
+      //printf("cleaner name: %s\n", threadInfo->TQ[i].name);
+      dequeue( &(threadInfo->TQ[i]) );
+    }
+  }
+
+  return NULL;
 }
 
 
 int main()
 {
   int i;
+  size_t len = MAXLINE;
+  char *buffer = malloc (len * sizeof(char));
+  char *tokens[5];
+  char *savePtr;
   struct topicQueue TQ[MAXQTOPICS]; //make the queue of topics
 
   for (i = 0; i < MAXQTOPICS; i++)
   {
-    init(&TQ[i], "test");
+    init( &(TQ[i]) , "init", 0);
   }
 
   struct pubThread pubThreads[NUMPROXIES/2]; //each of these holds the arguments that are passed to publisher() or subscriber()
   struct subThread subThreads[NUMPROXIES/2]; //including info about the thread
+  struct cleanThread cleanThreadInfo = {.TQ = TQ, .wait = (pthread_cond_t) PTHREAD_COND_INITIALIZER};
 
   for (i = 0; i < NUMPROXIES/2; i++) //for each thread in both pools
   {
     //initialize thread info
-    pubThreads[i].TQ = &(TQ[0]);
+    pubThreads[i].TQ = TQ;
     pubThreads[i].free = 1;
     pubThreads[i].wait = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
 
     pthread_create(&(pubThreads[i].id), NULL, publisher, &(pubThreads[i])); //then make the thread
 
     //init thread info
-    subThreads[i].TQ = &(TQ[0]);
+    subThreads[i].TQ = TQ;
     subThreads[i].free = 1;
     subThreads[i].wait = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
 
@@ -124,24 +142,42 @@ int main()
   }
 
 
+  pthread_create(&(cleanThreadInfo.id), NULL, cleaner, &cleanThreadInfo);
+
   sleep(2); //delay after pool is made
 
-  pubThreads[0].test = "hellooooo";
-  pthread_cond_broadcast(&(pubThreads[0].wait));
 
-  sleep(1);
+  while (getline(&buffer, &len, stdin) >= 0)
+  {
 
-  pthread_cond_broadcast(&(subThreads[0].wait));
+    for (i = 0; i < 5; i++)
+    {
+      tokens[0] = NULL;
+    }
 
-  sleep(1);
+    tokens[0] = strtok_r(buffer, " \n", &savePtr);
+
+    i = 1;
+    while ( (tokens[i] = strtok_r(NULL, " \n", &savePtr)) != NULL )
+    {
+      i++;
+    }
+
+    inputHandler(TQ, tokens, pubThreads, subThreads);
+
+
+  }
+
+  pthread_cond_broadcast(&(cleanThreadInfo.wait)); //starting cleaner
 
   done = 1;
 
-  for (i = 0; i < NUMPROXIES/2; i++)
+  for (i = 0; i < NUMPROXIES/2; i++) //signal threads to continue, which allows them to see that the done flag is set
   {
     pthread_cond_broadcast(&(pubThreads[i].wait));
     pthread_cond_broadcast(&(subThreads[i].wait));
   }
+
 
   for (i = 0; i < NUMPROXIES/2; i++)
   {
@@ -154,12 +190,16 @@ int main()
 
   }
 
+
+
+  pthread_join(cleanThreadInfo.id, NULL);
+
   for (i = 0; i < MAXQTOPICS; i++)
   {
-    tqFree(&TQ[i]);
+      tqFree(&TQ[i]);
   }
 
-
+  free(buffer);
 
 
   return 0;
