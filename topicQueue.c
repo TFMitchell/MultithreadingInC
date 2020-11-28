@@ -111,4 +111,5 @@ int getEntry(struct topicQueue *TQ, struct topicEntry *TE, int lastEntry)
 void setDelta(float delta)
 {
   DELTA = delta;
+  printf("Delta is now %d.\n", (int) DELTA);
 }

@@ -106,9 +106,10 @@ void *cleaner(void *args)
 }
 
 
+
 int main()
 {
-  int i;
+  int i = 0, currentPubFile = 0, currentSubFile = 0;
   size_t len = MAXLINE;
   char *buffer = malloc (len * sizeof(char));
   char *tokens[5];
@@ -123,6 +124,17 @@ int main()
   struct pubThread pubThreads[NUMPROXIES/2]; //each of these holds the arguments that are passed to publisher() or subscriber()
   struct subThread subThreads[NUMPROXIES/2]; //including info about the thread
   struct cleanThread cleanThreadInfo = {.TQ = TQ, .wait = (pthread_cond_t) PTHREAD_COND_INITIALIZER};
+  char *publisherFiles[MAXPUBSnSUBS];
+  char *subscriberFiles[MAXPUBSnSUBS];
+
+  for (i = 0; i < MAXPUBSnSUBS; i++)
+  {
+    publisherFiles[i] = malloc (MAXLINE * sizeof(char));
+    subscriberFiles[i] = malloc (MAXLINE * sizeof(char));
+
+    publisherFiles[i][0] = '\0';
+    subscriberFiles[i][0] = '\0';
+  }
 
   for (i = 0; i < NUMPROXIES/2; i++) //for each thread in both pools
   {
@@ -147,8 +159,10 @@ int main()
   sleep(2); //delay after pool is made
 
 
-  while (getline(&buffer, &len, stdin) >= 0)
+  do
   {
+    if (getline(&buffer, &len, stdin) == 0)
+      printf("Instructions didn't include \"start\"\n");
 
     for (i = 0; i < 5; i++)
     {
@@ -163,14 +177,23 @@ int main()
       i++;
     }
 
-    inputHandler(TQ, tokens, pubThreads, subThreads);
+    inputHandler(TQ, tokens, publisherFiles, subscriberFiles);
 
-
-  }
+  } while (inputHandler(TQ, tokens, publisherFiles, subscriberFiles));
 
   pthread_cond_broadcast(&(cleanThreadInfo.wait)); //starting cleaner
 
-  done = 1;
+  while (!done) //main scheduler
+  {
+    //publisher work
+    for (i = currentPubFile, i <MAXPUBSnSUBS, i++)
+    {
+      
+    }
+
+
+
+  }
 
   for (i = 0; i < NUMPROXIES/2; i++) //signal threads to continue, which allows them to see that the done flag is set
   {
@@ -200,6 +223,14 @@ int main()
   }
 
   free(buffer);
+
+  for (i = 0; i < MAXPUBSnSUBS; i++)
+  {
+    free(publisherFiles[i]);
+    free(subscriberFiles[i]);
+
+  }
+
 
 
   return 0;

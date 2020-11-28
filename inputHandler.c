@@ -13,25 +13,25 @@ void queryTopics(struct topicQueue *TQ)
   }
 }
 
-void queryPublishers(struct pubThread *pubThreads)
+void queryPublishers(char **publisherFiles)
 {
-  for (int i = 0; i < NUMPROXIES/2; i++)
+  for (int i = 0; i < MAXPUBSnSUBS; i++)
   {
-    if (pubThreads[i].free == 0) //if not free, print details
-      printf("Publisher #%d is active.\n", (int) pubThreads[i].id);
+    if ( strcmp(publisherFiles[i], "") ) //if not free, print details
+      printf("Publisher #%d is ready to read from %s.\n", i, publisherFiles[i]);
   }
 }
 
-void querySubscribers(struct subThread *subThreads)
+void querySubscribers(char **subscriberFiles)
 {
-  for (int i = 0; i < NUMPROXIES/2; i++)
+  for (int i = 0; i < MAXPUBSnSUBS; i++)
   {
-    if (subThreads[i].free == 0) //if not free, print details
-      printf("Subscriber #%d is active.\n", (int) subThreads[i].id);
+    if ( strcmp(subscriberFiles[i], "") ) //if not free, print details
+      printf("Subscriber #%d is ready to read from %s.\n", i, subscriberFiles[i]);
   }
 }
 
-void inputHandler(struct topicQueue *TQ, char **tokens, struct pubThread *pubThreads, struct subThread *subThreads)
+int inputHandler(struct topicQueue *TQ, char **tokens, char **publisherFiles, char **subscriberFiles)
 {
   int i;
 
@@ -49,45 +49,38 @@ void inputHandler(struct topicQueue *TQ, char **tokens, struct pubThread *pubThr
       queryTopics(TQ);
 
     else if ( !strcmp(tokens[1], "publishers") )
-      queryPublishers(pubThreads);
+      queryPublishers(publisherFiles);
 
     else // is subscriber
-      querySubscribers(subThreads);
+      querySubscribers(subscriberFiles);
   }
   else if ( ( !strcmp(tokens[0], "add") ))
   {
+
     if ( !strcmp(tokens[1], "publisher") )
     {
-      for (i = 0; i < NUMPROXIES/2; i++)
+      for (i = 0; i < MAXPUBSnSUBS; i++)
       {
-        if (pubThreads[i].free == 1)
+        if ( !strcmp(publisherFiles[i], "") )
         {
-          pubThreads[i].free = 0;
-          //set the arguments (probably a char* that has the name of the file)
+          strcpy(publisherFiles[i], tokens[2]);
           break;
-        }
-        else if (i == NUMPROXIES/2 - 1)
-        {
-          //have to wait on a thread
         }
       }
 
     }
     else //tokens[1] is subscriber
     {
-      for (i = 0; i < NUMPROXIES/2; i++)
+
+      for (i = 0; i < MAXPUBSnSUBS; i++)
       {
-        if (subThreads[i].free == 1)
+        if ( !strcmp(subscriberFiles[i], "") )
         {
-          subThreads[i].free = 0;
-          //set the arguments (probably a char* that has the name of the file)
+          strcpy(subscriberFiles[i], tokens[2]);
           break;
         }
-        else if (i == NUMPROXIES/2 - 1)
-        {
-          //have to wait on a thread
-        }
       }
+
     }
   }
   else if ( !strcmp(tokens[0], "delta") )
@@ -97,11 +90,8 @@ void inputHandler(struct topicQueue *TQ, char **tokens, struct pubThread *pubThr
 
   else //start
   {
-    for (i = 0; i < NUMPROXIES/2; i++) //starting the threads
-    {
-      pthread_cond_broadcast(&(pubThreads[i].wait));
-      pthread_cond_broadcast(&(subThreads[i].wait));
-    }
+    return 0;
 
   }
+  return 1;
 }
