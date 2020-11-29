@@ -28,10 +28,11 @@ int enqueue(struct topicQueue *TQ, struct topicEntry *TE)
 {
   pthread_mutex_lock(&(TQ->mutex));
 
+
   if (TQ->tail - TQ->head == TQ->length) //if full
   {
     pthread_mutex_unlock(&(TQ->mutex)); //return 0 and release lock
-    sched_yield(); //deprioritize
+    //sched_yield(); //deprioritize
     return 0;
   }
 
@@ -48,10 +49,10 @@ void dequeue(struct topicQueue *TQ)
 {
   pthread_mutex_lock(&(TQ->mutex));
 
-  if (TQ->tail == TQ->head) //if empty, release mutex and return
+
+   if (TQ->tail == TQ->head) //if empty, release mutex and return
   {
     pthread_mutex_unlock(&(TQ->mutex));
-    sched_yield();
     return;
   }
   //else compare the time against delta
@@ -61,10 +62,9 @@ void dequeue(struct topicQueue *TQ)
   float delta = currentTime.tv_sec - TQ->buffer[TQ->head].timeStamp.tv_sec;
 
   if (delta > DELTA) //only dequeue if old
-    TQ->head++;
+    (TQ->head)++;
 
   pthread_mutex_unlock(&(TQ->mutex));
-  sched_yield();
 }
 
 int getEntry(struct topicQueue *TQ, struct topicEntry *TE, int lastEntry)
@@ -74,7 +74,7 @@ int getEntry(struct topicQueue *TQ, struct topicEntry *TE, int lastEntry)
   if (TQ->tail == TQ->head) //if empty
   {
     pthread_mutex_unlock(&(TQ->mutex));
-    sched_yield();
+    //sched_yield();
     return 0;
   }
 
@@ -88,6 +88,8 @@ int getEntry(struct topicQueue *TQ, struct topicEntry *TE, int lastEntry)
       pthread_mutex_unlock(&(TQ->mutex));
       return 1;
     }
+    else
+      i++;
   }
 
   //if lastEntry+1 is not in our non-empty queue
@@ -101,10 +103,12 @@ int getEntry(struct topicQueue *TQ, struct topicEntry *TE, int lastEntry)
       pthread_mutex_unlock(&(TQ->mutex));
       return TE->entryNum;
     }
+    else
+      i++;
   }
   //else they're all less than or equal to the lastEntry + 1
   pthread_mutex_unlock(&(TQ->mutex));
-  sched_yield();
+  //sched_yield();
   return 0;
 }
 

@@ -39,15 +39,25 @@ void *publisher(void *args)
     if ( (file = fopen (threadInfo->fileName, "r") ) != NULL )
     {
       size_t len = MAXLINE;
+      char *tokens[30]; //every word in the caption counts against this
       char *buffer = malloc (MAXLINE * sizeof(char));
       char *savePtr;
 
       while (getline(&buffer, &len, file) > 0)
       {
-        char *tokens[] = {NULL, NULL, NULL, NULL};
+
         struct topicEntry tmpEntry; //make the entry that needs to be enqueued
 
+
+        for (i = 0; i < 30; i++)
+        {
+          tokens[i] = NULL;
+        }
+
         tokens[0] = strtok_r(buffer, " \"\n", &savePtr);
+
+        if (tokens[0] == NULL) //if there was a newline
+          continue;
 
         i = 1;
         while ( (tokens[i] = strtok_r(NULL, " \"\n", &savePtr)) != NULL)
@@ -62,14 +72,36 @@ void *publisher(void *args)
 
         tmpEntry.pubID = atoi(tokens[1]);
         strcpy(tmpEntry.photoURL, tokens[2]);
-        strcpy(tmpEntry.photoCaption, tokens[3]);
 
-        enqueue( &(threadInfo->TQ[threadInfo->currentQueueID]) , &tmpEntry); // enqueue it
 
+        char *tmpCaption = malloc (MAXLINE * sizeof(char));
+        strcpy(tmpCaption, "");
+
+        i = 3;
+        while (tokens[i] != NULL)
+        {
+          strcat(tmpCaption, tokens[i]);
+          strcat(tmpCaption, " ");
+          i++;
+        }
+
+        strcpy(tmpEntry.photoCaption, tmpCaption);
+
+
+        //printf("enqueue in\n");
+        while ( enqueue( &(threadInfo->TQ[threadInfo->currentQueueID]) , &tmpEntry) == 0 );
+          sched_yield(); // keep trying to enqueue it.
+
+
+        //sched_yield();
+        free(tmpCaption);
       }
+
+
       free(buffer);
       fclose(file);
       threadInfo->free = 1; //this thread is now free
+
     }
 
     // now wait for it to be awoken again
@@ -98,15 +130,17 @@ void *subscriber(void *args)
     FILE *file;
     int lastEntry = 0;
 
+
     if ( (file = fopen (threadInfo->fileName, "r") ) != NULL )
     {
       size_t len = MAXLINE;
       char *buffer = malloc (MAXLINE * sizeof(char));
       char *savePtr;
+      char *tokens[] = {NULL, NULL};
 
       while (getline(&buffer, &len, file) > 0)
       {
-        char *tokens[] = {NULL, NULL};
+
         struct topicEntry tmpEntry; //make the entry that will be passed to getEntry
 
         tokens[0] = strtok_r(buffer, " \"\n", &savePtr);
@@ -114,22 +148,24 @@ void *subscriber(void *args)
         tokens[1] = strtok_r(NULL, " \"\n", &savePtr);
 
 
-        if ( strcmp(tokens[0], "get") ) //we're skipping anything other than put for now
+        if ( strcmp(tokens[0], "get") ) //we're skipping anything other than get for now
           continue;
 
         threadInfo->currentQueueID = atoi(tokens[1]);
 
+        if (getEntry( &(threadInfo->TQ[atoi(tokens[1])]) , &tmpEntry, lastEntry)) // get it
+        {
+          lastEntry = tmpEntry.entryNum;
 
-        getEntry( &(threadInfo->TQ[atoi(tokens[1])]) , &tmpEntry, lastEntry); // enqueue it
-
-        lastEntry = tmpEntry.entryNum;
-
-        printf("Photo: %s Caption: %s\n", tmpEntry.photoURL, tmpEntry.photoCaption);
-
+          printf("Photo: %s Caption: %s\n", tmpEntry.photoURL, tmpEntry.photoCaption);
+        }
+        sched_yield();
       }
+
       free(buffer);
       fclose(file);
       threadInfo->free = 1; //this thread is now free
+
     }
 
     // now wait for it to be awoken again
@@ -150,18 +186,22 @@ void *cleaner(void *args)
   int i;
   struct cleanThread *threadInfo = (struct cleanThread*) args; //no more need to cast when dereferencing
 
+
   //wait to start
   pthread_mutex_lock(&mainMTX);
   pthread_cond_wait(& (threadInfo->wait), &mainMTX);
   pthread_mutex_unlock(&mainMTX);
 
+
   while (!done)
   {
+    sleep(3);
     for (i = 0; i < MAXQTOPICS; i++)
     {
-      //printf("cleaner name: %s\n", threadInfo->TQ[i].name);
       dequeue( &(threadInfo->TQ[i]) );
+      sched_yield();
     }
+
   }
 
   return NULL;
@@ -220,6 +260,8 @@ int main()
 
   pthread_create(&(cleanThreadInfo.id), NULL, cleaner, &cleanThreadInfo);
 
+  sleep(1); //delay after pool is made
+
   pthread_cond_broadcast(&(cleanThreadInfo.wait)); //starting cleaner
 
   for (i = 0; i < NUMPROXIES/2; i++) //start the threads running and waiting
@@ -228,7 +270,6 @@ int main()
     pthread_cond_broadcast(&(subThreads[i].wait));
   }
 
-  sleep(2); //delay after pool is made
 
 
   do
@@ -259,6 +300,7 @@ int main()
     done = 1; //assume we're done until proven otherwise
     for (i = 0; i < NUMPROXIES/2; i++)
     {
+
       if (pubThreads[i].free == 1)
       {
         if ( strcmp(publisherFiles[currentPubFile], "") ) //if there is a file at this position
@@ -270,8 +312,8 @@ int main()
           done = 0; //we can't be done now.
         }
 
-       }
-       else //it is busy
+      }
+      else //it is busy
         done = 0; //we're not done
 
       if (subThreads[i].free == 1)
@@ -285,14 +327,12 @@ int main()
           done = 0; //we can't be done now.
         }
 
-       }
-       else //it is busy
+      }
+      else //it is busy
         done = 0; //we're not done
 
-      }
+    }
   }
-
-
 
   for (i = 0; i < NUMPROXIES/2; i++) //signal threads to continue, which allows them to see that the done flag is set
   {
