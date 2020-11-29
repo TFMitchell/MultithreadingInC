@@ -5,7 +5,7 @@ struct pubThread{
     struct topicQueue *TQ;
     pthread_t id;
     char free;
-    char *test;
+    char *fileName;
     pthread_cond_t wait;
     int currentQueueID;
 };
@@ -14,6 +14,7 @@ struct subThread{
     struct topicQueue *TQ;
     pthread_t id;
     char free;
+    char *fileName;
     pthread_cond_t wait;
     int currentQueueID;
 };
