@@ -1,13 +1,14 @@
 #include <pthread.h>
 #include "inputHandler.h"
 
+#define MAXLINE 256
+
 struct pubThread{
     struct topicQueue *TQ;
     pthread_t id;
     char free;
     char *fileName;
     pthread_cond_t wait;
-    int currentQueueID;
 };
 
 struct subThread{
@@ -16,7 +17,6 @@ struct subThread{
     char free;
     char *fileName;
     pthread_cond_t wait;
-    int currentQueueID;
 };
 
 struct cleanThread{
@@ -24,6 +24,8 @@ struct cleanThread{
     struct topicQueue *TQ;
     pthread_cond_t wait;
 };
+
+char *getDone();
 
 void *publisher(void *args);
 
