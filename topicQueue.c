@@ -25,11 +25,17 @@ void tqFree(struct topicQueue *TQ)
 
 int enqueue(struct topicQueue *TQ, struct topicEntry *TE)
 {
+
   pthread_mutex_lock(&(TQ->mutex)); //get that TQ's lock
+  time_t begin = clock();
+  if ( ((int) (clock() - begin)) > 1000000)
+  printf("It took %d cycles to get the mutex in enqueue\n", (int) (clock() - begin));
 
   if (TQ->tail - TQ->head == TQ->length) //if full
   {
     pthread_mutex_unlock(&(TQ->mutex)); //return 0 and release lock
+    if ( ((int) (clock() - begin)) > 1000000)
+      printf("It took %d cycles for enqueue to finish\n", (int) (clock() - begin));
     return 0;
   }
   //else not full
@@ -40,16 +46,24 @@ int enqueue(struct topicQueue *TQ, struct topicEntry *TE)
   (TQ->tail)++; //advance the tail
 
   pthread_mutex_unlock(&(TQ->mutex)); //unlock and return 1
+  if ( ((int) (clock() - begin)) > 1000000)
+    printf("It took %d cycles for enqueue to finish\n", (int) (clock() - begin));
   return 1;
 }
 
 void dequeue(struct topicQueue *TQ)
 {
-  pthread_mutex_lock(&(TQ->mutex)); //get that TQ's lock
 
+  pthread_mutex_lock(&(TQ->mutex)); //get that TQ's lock
+  //if ( ((int) (clock() - begin)) >1000000)
+  //printf("It took %d cycles to get the mutex in dequeue\n", (int) (clock() - begin));
+
+time_t begin = clock();
   if (TQ->tail == TQ->head) //if empty, release mutex and stop function
   {
     pthread_mutex_unlock(&(TQ->mutex));
+    if ( ((int) (clock() - begin)) > 1000000)
+      printf("It took %d cycles for dequeue to finish\n", (int) (clock() - begin));
     return;
   }
   //else compare the time against delta
@@ -63,27 +77,39 @@ void dequeue(struct topicQueue *TQ)
   {
     (TQ->head)++;
     pthread_mutex_unlock(&(TQ->mutex));
+    if ( ((int) (clock() - begin)) > 1000000)
+      printf("It took %d cycles for dequeue to finish\n", (int) (clock() - begin));
   }
   else
   {
     pthread_mutex_unlock(&(TQ->mutex));
+    if ( ((int) (clock() - begin)) > 1000000)
+      printf("It took %d cycles for dequeue to finish\n", (int) (clock() - begin));
   }
 
 }
 
 int getEntry(struct topicQueue *TQ, struct topicEntry *TE, int lastEntry)
 {
+  int i = 0;
   pthread_mutex_lock(&(TQ->mutex)); //get that TQ's lock
+
+  //if ( ((int) (clock() - begin)) > 1000000)
+  //printf("It took %d cycles to get the mutex in ge\n", (int) (clock() - begin));
+
 
   if (TQ->tail == TQ->head) //if empty
   {
     pthread_mutex_unlock(&(TQ->mutex));
+    //if ( ((int) (clock() - begin)) > 1000000)
+    //  printf("It took %d cycles for ge to finish for empty case\n", (int) (clock() - begin));
     return 0;
   }
   //else look for lastEntry+1
 
-  int i = TQ->head; //first entry to check is at the head
-  while (i < TQ->tail) //while we're within the tail (which points to where the next entry would go),
+
+  //first entry to check is at the head
+  for (i = TQ->head; i < TQ->tail; i++) //while we're within the tail (which points to where the next entry would go),
   {
     if (TQ->buffer[i % TQ->length].entryNum == (lastEntry + 1)) //if we have a next entry to provide,
     {
@@ -91,26 +117,37 @@ int getEntry(struct topicQueue *TQ, struct topicEntry *TE, int lastEntry)
       pthread_mutex_unlock(&(TQ->mutex));
       return 1;
     }
-    else
-      i++;
   }
+
+
 
   //else lastEntry+1 is not in our non-empty queue
 
-  i = TQ->head; //first entry to check is head
-  while (i < TQ->tail) //while we're within the range of the tail (which points to where the next entry goes),
+
+  //first entry to check is at the head
+  for (i = TQ->head; i < TQ->tail; i++) //while we're within the tail (which points to where the next entry would go),
   {
     if (TQ->buffer[i % TQ->length].entryNum > (lastEntry + 1)) //return the first one that is greater than entryNum
     {
-      *TE = TQ->buffer[i % TQ->length];
+      time_t begin = clock();
+      TE->entryNum = TQ->buffer[i % TQ->length].entryNum;
+      //TE->timeStamp = TQ->buffer[i % TQ->length].timeStamp;
+      //strcpy(TE->photoURL, TQ->buffer[i % TQ->length].photoURL);
+      //strcpy(TE->photoCaption, TQ->buffer[i % TQ->length].photoCaption);
+
+      if ( ((int) (clock() - begin)) > 500000)
+          //printf("It took %d cycles for ge test segment, whose i iterated up to %d after starting at head %d\n", (int) (clock() - begin), i, TQ->head);
+          printf("surely copying doesn't take this long\n");
+
       pthread_mutex_unlock(&(TQ->mutex));
       return TE->entryNum; //this is never 0, so it works
     }
-    else
-      i++;
   }
+
   //else they're all less than or equal to the lastEntry + 1
   pthread_mutex_unlock(&(TQ->mutex));
+  //if ( ((int) (clock() - begin)) > 1000000)
+    //printf("It took %d cycles for ge to finish for all old entries case\n", (int) (clock() - begin));
   return 0;
 }
 

@@ -91,6 +91,7 @@ int main()
 
   while (!tmpDone)
   {
+    time_t begin = clock();
     tmpDone = 1; //assume we're tmpDone until proven otherwise
     for (i = 0; i < NUMPROXIES/2; i++) //go through all of the subs and pubs
     {
@@ -118,9 +119,13 @@ int main()
       else //it is busy
         tmpDone = 0; //we're not tmpDone
     }
+    if ( ((int) (clock() - begin)) > 1000000)
+      printf("It took %d cycles for scheduler to finish\n", (int) (clock() - begin));
     pthread_mutex_lock(&mtx);
     pthread_cond_broadcast(&cond);
     pthread_mutex_unlock(&mtx);
+    if ( ((int) (clock() - begin)) > 1000000)
+      printf("It took %d cycles for scheduler to finish including lock\n", (int) (clock() - begin));
   }
   done = 1;
 
