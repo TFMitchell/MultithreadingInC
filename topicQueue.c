@@ -101,7 +101,6 @@ int getEntry(struct topicQueue *TQ, struct topicEntry *TE, int lastEntry)
   {
     if (TQ->buffer[i % TQ->length].entryNum > (lastEntry + 1)) //return the first one that is greater than entryNum
     {
-      time_t begin = clock();
       *TE = TQ->buffer[i % TQ->length];
 
       pthread_mutex_unlock(&(TQ->mutex));

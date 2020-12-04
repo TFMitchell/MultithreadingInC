@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 
-int main()
+int main(int argc, char **argv)
 {
   struct topicQueue TQ[MAXQTOPICS]; //make the queue of topics
   struct pubThread pubThreads[NUMPROXIES/2]; //each of these holds the arguments that are passed to publisher() or subscriber(),
@@ -25,10 +25,23 @@ int main()
   char *publisherFiles[MAXPUBSnSUBS];
   int i = 0, currentPubFile = 0, currentSubFile = 0; //for iterating through arrays of filenames
   size_t len = MAXLINE;
-  char *buffer = malloc (MAXLINE * sizeof(char));
+
   char *savePtr;
   char *tokens[5]; //input.txt will have max 5 arguments
   char tmpDone = 0;
+  FILE *inputFile;
+
+  if (argc != 2)
+  {
+    printf("You need to specify an input.txt-type file.\n");
+    return 1;
+  }
+
+  else if ( (inputFile = fopen(argv[1], "r")) == NULL )
+  {
+    printf("Couldn't open specified file.\n");
+    return 1;
+  }
 
   for (i = 0; i < MAXQTOPICS; i++) //initizlize the TQ array with ones with "init" as the name.
   {
@@ -65,10 +78,11 @@ int main()
   pthread_create(&(cleanThreadInfo.id), NULL, cleaner, &cleanThreadInfo); //make the cleaner
 
   sleep(1);
+  char *buffer = malloc (MAXLINE * sizeof(char));
 
   do
   {
-    if (getline(&buffer, &len, stdin) == 0) //reads lines into buffer
+    if (getline(&buffer, &len, inputFile) == 0) //reads lines into buffer
       printf("Instructions didn't include \"start\"\n"); //the program will hang, but better than exiting with leaks
 
     for (i = 0; i < 5; i++) //need to nullify these since arguments don't always have 5
@@ -144,6 +158,8 @@ int main()
   }
 
   pthread_join(cleanThreadInfo.id, NULL); //wait for cleaner to exit
+
+  fclose(inputFile);
 
   for (i = 0; i < MAXQTOPICS; i++) //free the topics
   {

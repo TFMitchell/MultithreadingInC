@@ -33,7 +33,6 @@ void *publisher(void *args)
 
       while (getline(&buffer, &len, file) > 0)
       {
-        sched_yield();
         struct topicEntry tmpEntry; //make the entry that needs to be enqueued
 
         for (i = 0; i < 30; i++) //nullify since we have a variable amount of tokens
@@ -113,7 +112,6 @@ void *subscriber(void *args)
 
   while (!done) //while not done
   {
-    //pthread_mutex_lock(&(threadInfo->mutex));
     FILE *file;
     int i = 0;
 
@@ -123,16 +121,20 @@ void *subscriber(void *args)
     {
       struct topicEntry tmpEntry;
       char *buffer = malloc (MAXLINE * sizeof(char));
+      char idAsString[32];
       FILE *htmlFile;
       size_t len = MAXLINE;
       char *savePtr;
       char *tokens[] = {NULL, NULL}; //we only have a maximum of two arguments here
+      int lastEntry = 0;
 
 
       strcpy(buffer, "");
       strcat(buffer, "subscriber_");
-      strcat(filename, threadID);
+      sprintf(idAsString, "%u", (unsigned int) pthread_self());
+      strcat(buffer, idAsString);
       strcat(buffer, ".html");
+
 
       if ( (htmlFile = fopen(buffer, "w+")) == NULL)
       {
@@ -142,11 +144,10 @@ void *subscriber(void *args)
         continue;
       }
 
-      initializeFile(htmlFile, (unsigned int) pthread_self());
+      initializeFile(htmlFile, idAsString, threadInfo->fileName);
 
       while (getline(&buffer, &len, file) > 0)
       {
-        sched_yield();
         tokens[0] = strtok_r(buffer, " \"\n", &savePtr); //reading the two arguments into tokens[]
         tokens[1] = strtok_r(NULL, " \"\n", &savePtr);
 
@@ -166,27 +167,37 @@ void *subscriber(void *args)
 
         char *URLs[threadInfo->TQ[ atoi(tokens[1]) ].length];
         char *captions[threadInfo->TQ[ atoi(tokens[1]) ].length];
-        int lastEntry = 0;
 
         for (i = 0; i < threadInfo->TQ[ atoi(tokens[1]) ].length; i++)
         {
-          URLs[i] = NULL;
-          captions[i] = NULL;
+          URLs[i] = malloc (URLSIZE * sizeof(char));
+          strcpy(URLs[i], "");
+          captions[i] = malloc (CAPSIZE * sizeof(char));
+          strcpy(captions[i], "");
         }
 
         printf("Proxy thread %u - type: Subscriber - Executed command: get %s \n", (unsigned int) pthread_self(), tokens[1]);
 
 
+        sched_yield();
         i = 0;
+        lastEntry = 0;
         while(getEntry( &(threadInfo->TQ[ atoi(tokens[1]) ]) , &tmpEntry, lastEntry))
         {
           lastEntry = tmpEntry.entryNum;
-          URLs[i] = tmpEntry.photoURL;
-          captions[i] = tmpEntry.photoCaption;
+          strcpy(URLs[i], tmpEntry.photoURL);
+          strcpy(captions[i], tmpEntry.photoCaption);
           i++;
+          sleep(1);
         }
 
-        addEntry(file, URLs, captions, tokens[i]);
+        addEntry(htmlFile, URLs, captions, threadInfo->TQ[ atoi(tokens[1]) ].name);
+
+        for (i = 0; i < threadInfo->TQ[ atoi(tokens[1]) ].length; i++)
+        {
+          free(URLs[i]);
+          free(captions[i]);
+        }
 
       }
       //we've reached eof
