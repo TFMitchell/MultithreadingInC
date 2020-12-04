@@ -12,36 +12,35 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "unistd.h"
+#include <unistd.h>
+
 
 int main()
 {
+  struct topicQueue TQ[MAXQTOPICS]; //make the queue of topics
+  struct pubThread pubThreads[NUMPROXIES/2]; //each of these holds the arguments that are passed to publisher() or subscriber(),
+  struct subThread subThreads[NUMPROXIES/2];    //including info about the thread
+  struct cleanThread cleanThreadInfo = {.TQ = TQ}; //special single one for the cleaner's args
+  char *subscriberFiles[MAXPUBSnSUBS];//the list of filenames for pubs and subs
+  char *publisherFiles[MAXPUBSnSUBS];
   int i = 0, currentPubFile = 0, currentSubFile = 0; //for iterating through arrays of filenames
   size_t len = MAXLINE;
   char *buffer = malloc (MAXLINE * sizeof(char));
   char *savePtr;
   char *tokens[5]; //input.txt will have max 5 arguments
-  struct topicQueue TQ[MAXQTOPICS]; //make the queue of topics
-
-  char *done = getDone(); //this is a global in server.c, but we need to use it in here
+  char tmpDone = 0;
 
   for (i = 0; i < MAXQTOPICS; i++) //initizlize the TQ array with ones with "init" as the name.
   {
     init( &(TQ[i]) , "init", 0);
   }
 
-  struct pubThread pubThreads[NUMPROXIES/2]; //each of these holds the arguments that are passed to publisher() or subscriber(),
-  struct subThread subThreads[NUMPROXIES/2];    //including info about the thread
-  struct cleanThread cleanThreadInfo = {.TQ = TQ, .wait = (pthread_cond_t) PTHREAD_COND_INITIALIZER}; //special single one for the cleaner's args
-  char *publisherFiles[MAXPUBSnSUBS]; //the list of filenames for pubs and subs (below)
-  char *subscriberFiles[MAXPUBSnSUBS];
-
   for (i = 0; i < MAXPUBSnSUBS; i++) //initialize the list of filenames
   {
     publisherFiles[i] = malloc (MAXLINE * sizeof(char));
     subscriberFiles[i] = malloc (MAXLINE * sizeof(char));
 
-    publisherFiles[i][0] = '\0'; //allows for comparison later to the empty string ""
+    publisherFiles[i][0] = '\0';
     subscriberFiles[i][0] = '\0';
   }
 
@@ -50,16 +49,14 @@ int main()
     //initialize thread info
     pubThreads[i].TQ = TQ;
     pubThreads[i].free = 1;
-    pubThreads[i].fileName = "";
-    pubThreads[i].wait = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
+    pubThreads[i].fileName = NULL;
 
     pthread_create(&(pubThreads[i].id), NULL, publisher, &(pubThreads[i])); //then make the thread
 
     //init thread info
     subThreads[i].TQ = TQ;
     subThreads[i].free = 1;
-    subThreads[i].fileName = "";
-    subThreads[i].wait = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
+    subThreads[i].fileName = NULL;
 
     pthread_create(&(subThreads[i].id), NULL, subscriber, &(subThreads[i])); //make the thread
   }
@@ -67,9 +64,7 @@ int main()
 
   pthread_create(&(cleanThreadInfo.id), NULL, cleaner, &cleanThreadInfo); //make the cleaner
 
-  sleep(1); //delay after pools are made
-
-  pthread_cond_broadcast(&(cleanThreadInfo.wait)); //starting cleaner
+  sleep(1);
 
   do
   {
@@ -93,51 +88,45 @@ int main()
 
   free(buffer);
 
-  while (!*done)
+
+  while (!tmpDone)
   {
-    clock_t begin = clock();
-    *done = 1; //assume we're done until proven otherwise
+    tmpDone = 1; //assume we're tmpDone until proven otherwise
     for (i = 0; i < NUMPROXIES/2; i++) //go through all of the subs and pubs
     {
       if (pubThreads[i].free == 1) //when we find a free one of the pub type,
       {
-        if ( strcmp(publisherFiles[currentPubFile], "") ) //and if there is a file that needs a proxy thread at this position,
+        if ( publisherFiles[currentPubFile][0] != '\0' ) //and if there is a file that needs a proxy thread at this position,
         {
           pubThreads[i].fileName = publisherFiles[currentPubFile++]; //then set it, and advance the count
-
           pubThreads[i].free = 0; //no longer free
-          pthread_cond_broadcast( &(pubThreads[i].wait)); //wake it up
-          *done = 0; //we can't be done now.
+          tmpDone = 0; //we can't be tmpDone now.
         }
       }
       else //it is busy
-        *done = 0; //we're not done
+        tmpDone = 0; //we're not tmpDone
 
       if (subThreads[i].free == 1) //when we find a free one of the sub type,
       {
-        if ( strcmp(subscriberFiles[currentSubFile], "") ) //and if there is a file at this position that needs a proxy thread,
+        if ( subscriberFiles[currentSubFile][0] != '\0' ) //and if there is a file at this position that needs a proxy thread,
         {
           subThreads[i].fileName = subscriberFiles[currentSubFile++]; //then set it, and advance the count
-
           subThreads[i].free = 0; //no longer free
-          pthread_cond_broadcast( &(subThreads[i].wait)); //wake it up
-          *done = 0; //we can't be done now.
+          tmpDone = 0; //we can't be tmpDone now.
         }
       }
       else //it is busy
-        *done = 0; //we're not done
+        tmpDone = 0; //we're not tmpDone
     }
-
-    //printf("scheduler took %d\n", (int) (clock() - begin));
+    pthread_mutex_lock(&mtx);
+    pthread_cond_broadcast(&cond);
+    pthread_mutex_unlock(&mtx);
   }
+  done = 1;
 
-  //when we're past that while loop, we're done processing stuff
-  for (i = 0; i < NUMPROXIES/2; i++) //signal threads to continue, which allows them to see that the done flag is set
-  {
-    pthread_cond_broadcast(&(pubThreads[i].wait));
-    pthread_cond_broadcast(&(subThreads[i].wait));
-  }
-
+  pthread_mutex_lock(&mtx);
+  pthread_cond_broadcast(&cond);
+  pthread_mutex_unlock(&mtx);
 
   for (i = 0; i < NUMPROXIES/2; i++) //wait for threads to exit
   {

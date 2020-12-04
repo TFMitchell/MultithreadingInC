@@ -85,7 +85,7 @@ int getEntry(struct topicQueue *TQ, struct topicEntry *TE, int lastEntry)
   int i = TQ->head; //first entry to check is at the head
   while (i < TQ->tail) //while we're within the tail (which points to where the next entry would go),
   {
-    if (TQ->buffer[i % TQ->length].entryNum == lastEntry + 1) //if we have a next entry to provide,
+    if (TQ->buffer[i % TQ->length].entryNum == (lastEntry + 1)) //if we have a next entry to provide,
     {
       *TE = TQ->buffer[i % TQ->length]; //then return it
       pthread_mutex_unlock(&(TQ->mutex));
@@ -100,11 +100,11 @@ int getEntry(struct topicQueue *TQ, struct topicEntry *TE, int lastEntry)
   i = TQ->head; //first entry to check is head
   while (i < TQ->tail) //while we're within the range of the tail (which points to where the next entry goes),
   {
-    if (TQ->buffer[i % TQ->length].entryNum > lastEntry + 1) //return the first one that has a greater entryNum
+    if (TQ->buffer[i % TQ->length].entryNum > (lastEntry + 1)) //return the first one that is greater than entryNum
     {
       *TE = TQ->buffer[i % TQ->length];
       pthread_mutex_unlock(&(TQ->mutex));
-      return TE->entryNum;
+      return TE->entryNum; //this is never 0, so it works
     }
     else
       i++;
