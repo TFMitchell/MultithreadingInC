@@ -91,10 +91,11 @@ int main()
 
   while (!tmpDone)
   {
-    time_t begin = clock();
+    time_t begin = 0;
     tmpDone = 1; //assume we're tmpDone until proven otherwise
     for (i = 0; i < NUMPROXIES/2; i++) //go through all of the subs and pubs
     {
+
       if (pubThreads[i].free == 1) //when we find a free one of the pub type,
       {
         if ( publisherFiles[currentPubFile][0] != '\0' ) //and if there is a file that needs a proxy thread at this position,
@@ -102,6 +103,11 @@ int main()
           pubThreads[i].fileName = publisherFiles[currentPubFile++]; //then set it, and advance the count
           pubThreads[i].free = 0; //no longer free
           tmpDone = 0; //we can't be tmpDone now.
+
+          pthread_mutex_lock(&mtx);
+          pthread_cond_broadcast(&cond);
+          pthread_mutex_unlock(&mtx);
+
         }
       }
       else //it is busy
@@ -114,18 +120,16 @@ int main()
           subThreads[i].fileName = subscriberFiles[currentSubFile++]; //then set it, and advance the count
           subThreads[i].free = 0; //no longer free
           tmpDone = 0; //we can't be tmpDone now.
+
+          pthread_mutex_lock(&mtx);
+          pthread_cond_broadcast(&cond);
+          pthread_mutex_unlock(&mtx);
         }
       }
       else //it is busy
         tmpDone = 0; //we're not tmpDone
     }
-    if ( ((int) (clock() - begin)) > 1000000)
-      printf("It took %d cycles for scheduler to finish\n", (int) (clock() - begin));
-    pthread_mutex_lock(&mtx);
-    pthread_cond_broadcast(&cond);
-    pthread_mutex_unlock(&mtx);
-    if ( ((int) (clock() - begin)) > 1000000)
-      printf("It took %d cycles for scheduler to finish including lock\n", (int) (clock() - begin));
+
   }
   done = 1;
 
@@ -145,7 +149,6 @@ int main()
   {
       tqFree(&TQ[i]);
   }
-
 
   for (i = 0; i < MAXPUBSnSUBS; i++)
   {

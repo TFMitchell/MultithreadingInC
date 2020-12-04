@@ -4,7 +4,7 @@
 
 void initializeFile(FILE *file, unsigned int threadID)
 {
-
+  
 }
 
 void addEntry(FILE *file, char **URLs, char **captions, char *topic)

@@ -85,7 +85,6 @@ void *publisher(void *args)
           sched_yield();
 
 
-
         free(tmpCaption);
       }
 
@@ -99,8 +98,6 @@ void *publisher(void *args)
 
 
 
-    //while (threadInfo->free && !done)
-    //  sched_yield();
     pthread_mutex_lock(&mtx);
     pthread_cond_wait(&cond, &mtx);
     pthread_mutex_unlock(&mtx);
@@ -124,15 +121,17 @@ void *subscriber(void *args)
 
     else if ( (file = fopen (threadInfo->fileName, "r") ) != NULL ) //if we could actually open the file
     {
+      struct topicEntry tmpEntry;
       char *buffer = malloc (MAXLINE * sizeof(char));
       FILE *htmlFile;
       size_t len = MAXLINE;
       char *savePtr;
       char *tokens[] = {NULL, NULL}; //we only have a maximum of two arguments here
 
+
       strcpy(buffer, "");
       strcat(buffer, "subscriber_");
-      //strcat(filename, threadID);
+      strcat(filename, threadID);
       strcat(buffer, ".html");
 
       if ( (htmlFile = fopen(buffer, "w+")) == NULL)
@@ -164,7 +163,7 @@ void *subscriber(void *args)
           break; //we're done
         }
 
-        struct topicEntry tmpEntry;
+
         char *URLs[threadInfo->TQ[ atoi(tokens[1]) ].length];
         char *captions[threadInfo->TQ[ atoi(tokens[1]) ].length];
         int lastEntry = 0;
@@ -179,14 +178,14 @@ void *subscriber(void *args)
 
 
         i = 0;
-        while(getEntry( &(threadInfo->TQ[ atoi(tokens[1]) ]) , &tmpEntry, lastEntry));
+        while(getEntry( &(threadInfo->TQ[ atoi(tokens[1]) ]) , &tmpEntry, lastEntry))
         {
-          //sched_yield();
           lastEntry = tmpEntry.entryNum;
           URLs[i] = tmpEntry.photoURL;
           captions[i] = tmpEntry.photoCaption;
           i++;
         }
+
         addEntry(file, URLs, captions, tokens[i]);
 
       }
