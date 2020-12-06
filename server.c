@@ -1,4 +1,4 @@
-
+//contains publisher, subscriber, cleaner. To be called from quacker.c (main)
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,7 +8,7 @@
 #include "server.h"
 #include "htmlHandler.h"
 
-char done = 0; //global to signal to all threads easily
+char done = 0;
 pthread_cond_t cond = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mtx = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
 
@@ -18,11 +18,10 @@ void *publisher(void *args)
 
   while (!done) //while not done
   {
-
     FILE *file;
     int i = 0;
 
-    if ( threadInfo->fileName == NULL );
+    if ( threadInfo->fileName == NULL ); //if there's no file to open
 
     else if ( (file = fopen (threadInfo->fileName, "r") ) != NULL ) //if we can open the file
     {
@@ -67,7 +66,7 @@ void *publisher(void *args)
         strcpy(tmpEntry.photoURL, tokens[2]); //give it the url
 
         //next up is setting up the caption
-        char *tmpCaption = malloc (MAXLINE * sizeof(char));
+        char *tmpCaption = malloc (CAPSIZE * sizeof(char));
         tmpCaption[0] = '\0';
         i = 3;
         while (tokens[i] != NULL) //starting at 3, keep going until there's no more word in the caption
@@ -76,13 +75,14 @@ void *publisher(void *args)
           strcat(tmpCaption, " "); //add a space
           i++;
         }
+
         strcpy(tmpEntry.photoCaption, tmpCaption); //finally, place the caption into the tmp Entry
+        tmpEntry.pubID = atoi(tokens[1]);
 
         printf("Proxy thread %u - type: Publisher- Executed command: put %s %s %s \n", (unsigned int) pthread_self(), tokens[1], tokens[2], tmpCaption);
 
         while ( enqueue( &(threadInfo->TQ[ atoi(tokens[1]) ]) , &tmpEntry) == 0 ) //==0 means it was full
           sched_yield();
-
 
         free(tmpCaption);
       }
@@ -92,11 +92,8 @@ void *publisher(void *args)
       fclose(file);
       threadInfo->free = 1; //this thread is now free
       threadInfo->fileName = NULL;
-
     }
-
-
-
+    //this prevents busy waiting for the while (!done) loop we're in
     pthread_mutex_lock(&mtx);
     pthread_cond_wait(&cond, &mtx);
     pthread_mutex_unlock(&mtx);
@@ -115,11 +112,11 @@ void *subscriber(void *args)
     FILE *file;
     int i = 0;
 
-    if ( threadInfo->fileName == NULL );
+    if ( threadInfo->fileName == NULL ); //if there's no file to open
 
     else if ( (file = fopen (threadInfo->fileName, "r") ) != NULL ) //if we could actually open the file
     {
-      struct topicEntry tmpEntry;
+
       char *buffer = malloc (MAXLINE * sizeof(char));
       char idAsString[32];
       FILE *htmlFile;
@@ -128,13 +125,11 @@ void *subscriber(void *args)
       char *tokens[] = {NULL, NULL}; //we only have a maximum of two arguments here
       int lastEntry = 0;
 
-
       strcpy(buffer, "");
       strcat(buffer, "subscriber_");
       sprintf(idAsString, "%u", (unsigned int) pthread_self());
       strcat(buffer, idAsString);
       strcat(buffer, ".html");
-
 
       if ( (htmlFile = fopen(buffer, "w+")) == NULL)
       {
@@ -144,7 +139,7 @@ void *subscriber(void *args)
         continue;
       }
 
-      initializeFile(htmlFile, idAsString, threadInfo->fileName);
+      initializeFile(htmlFile, idAsString, threadInfo->fileName); //getting html file ready
 
       while (getline(&buffer, &len, file) > 0)
       {
@@ -171,26 +166,26 @@ void *subscriber(void *args)
         for (i = 0; i < threadInfo->TQ[ atoi(tokens[1]) ].length; i++)
         {
           URLs[i] = malloc (URLSIZE * sizeof(char));
-          strcpy(URLs[i], "");
+          URLs[i][0] = '\0';
+
           captions[i] = malloc (CAPSIZE * sizeof(char));
-          strcpy(captions[i], "");
+          captions[i][0] = '\0';
         }
 
         printf("Proxy thread %u - type: Subscriber - Executed command: get %s \n", (unsigned int) pthread_self(), tokens[1]);
 
-
-        sched_yield();
+        //this block gets the entries for the topics until there are no more, then adds them to the HTML
         i = 0;
         lastEntry = 0;
+        struct topicEntry tmpEntry;
         while(getEntry( &(threadInfo->TQ[ atoi(tokens[1]) ]) , &tmpEntry, lastEntry))
         {
           lastEntry = tmpEntry.entryNum;
           strcpy(URLs[i], tmpEntry.photoURL);
           strcpy(captions[i], tmpEntry.photoCaption);
           i++;
-          sleep(1);
-        }
 
+        }
         addEntry(htmlFile, URLs, captions, threadInfo->TQ[ atoi(tokens[1]) ].name);
 
         for (i = 0; i < threadInfo->TQ[ atoi(tokens[1]) ].length; i++)
@@ -198,8 +193,8 @@ void *subscriber(void *args)
           free(URLs[i]);
           free(captions[i]);
         }
-
       }
+      sched_yield();
       //we've reached eof
       closeFile(htmlFile);
       free(buffer);
@@ -207,10 +202,7 @@ void *subscriber(void *args)
       threadInfo->free = 1; //this thread is now free
       threadInfo->fileName = NULL;
     }
-
-    // now wait for it to be awoken again
-    //while (threadInfo->free && !done)
-    //  sched_yield();
+    //this prevents busy waiting on while(!done)
     pthread_mutex_lock(&mtx);
     pthread_cond_wait(&cond, &mtx);
     pthread_mutex_unlock(&mtx);
@@ -235,7 +227,7 @@ void *cleaner(void *args)
     for (i = 0; i < MAXQTOPICS; i++)
     {
       dequeue( &(threadInfo->TQ[i]) ); //try to dequeue
-      sched_yield();
+      sched_yield(); //instructions recommended this
     }
   }
   return NULL;

@@ -3,7 +3,7 @@
 #include <pthread.h>
 
 #define URLSIZE 1024
-#define CAPSIZE 256
+#define CAPSIZE 1024
 #define MAXNAME 50
 
 struct topicEntry{

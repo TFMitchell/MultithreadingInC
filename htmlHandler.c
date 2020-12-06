@@ -1,8 +1,8 @@
+//Handles HTML. Called by subscriber from server.c
 #include "htmlHandler.h"
 #include <string.h>
 
-
-void initializeFile(FILE *file, char *threadID, char *fileName)
+void initializeFile(FILE *file, char *threadID, char *fileName) //takes file handle, and adds the start to it
 {
   int i = 0;
   char *header[] = {
@@ -36,18 +36,15 @@ void initializeFile(FILE *file, char *threadID, char *fileName)
 
   fprintf(file, "\n<h1>Subscriber: subscriber_&lt;%s&gt;.html </h1>\n\n\n", threadID);
 
-
 }
 
-void addEntry(FILE *file, char **URLs, char **captions, char *topic)
+void addEntry(FILE *file, char **URLs, char **captions, char *topic) //adds an array of entries for a topic query
 {
   int i = 0;
   if (URLs[0][0] == '\0' || captions[0][0] == '\0')
     return;
 
   fprintf(file, "<h2>Topic Name: %s</h2>\n\n", topic);
-
-
 
   i = 0;
   do
@@ -60,12 +57,9 @@ void addEntry(FILE *file, char **URLs, char **captions, char *topic)
     i++;
   } while (strcmp(URLs[i], ""));
 
-
-
-
 }
 
-void closeFile(FILE *file)
+void closeFile(FILE *file) //appends ending to file and closes handle
 {
   fprintf(file, "</body></html>\n");
   fclose(file);

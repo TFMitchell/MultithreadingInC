@@ -1,11 +1,10 @@
 #include <pthread.h>
 #include "inputHandler.h"
 
-#define MAXLINE 256
-
-extern char done;// = 0; //global to signal to all threads easily
-extern pthread_cond_t cond;// = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
-extern pthread_mutex_t mtx;// = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+//contains the globals
+extern char done;
+extern pthread_cond_t cond;
+extern pthread_mutex_t mtx;
 
 struct pubThread{
     struct topicQueue *TQ;

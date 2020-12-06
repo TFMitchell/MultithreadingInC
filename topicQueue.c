@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <stdio.h>
 
-float DELTA = 10.0;
+float DELTA = 10.0; //default
 
 void init(struct topicQueue *TQ, char *name, int length)
 {
@@ -25,7 +25,6 @@ void tqFree(struct topicQueue *TQ)
 
 int enqueue(struct topicQueue *TQ, struct topicEntry *TE)
 {
-
   pthread_mutex_lock(&(TQ->mutex)); //get that TQ's lock
 
   if (TQ->tail - TQ->head == TQ->length) //if full
@@ -46,7 +45,6 @@ int enqueue(struct topicQueue *TQ, struct topicEntry *TE)
 
 void dequeue(struct topicQueue *TQ)
 {
-
   pthread_mutex_lock(&(TQ->mutex)); //get that TQ's lock
 
   if (TQ->tail == TQ->head) //if empty, release mutex and stop function

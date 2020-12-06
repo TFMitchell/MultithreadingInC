@@ -1,5 +1,5 @@
 /*
-* Description: Project 3 main -
+* Description: Project 3 main - Quacker social media platform. Uses proxy threads and ring buffer queues of topics to replicate a social media platform. Reads from files and outputs to HTML.
 *
 * Author: Thomas Mitchell
 *
@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-
 
 int main(int argc, char **argv)
 {
@@ -77,7 +76,6 @@ int main(int argc, char **argv)
 
   pthread_create(&(cleanThreadInfo.id), NULL, cleaner, &cleanThreadInfo); //make the cleaner
 
-  sleep(1);
   char *buffer = malloc (MAXLINE * sizeof(char));
 
   do
@@ -102,30 +100,34 @@ int main(int argc, char **argv)
 
   free(buffer);
 
+  sleep(1); //make sure threads are stable
 
+  //this starts the cleaner
+  pthread_mutex_lock(&mtx);
+  pthread_cond_broadcast(&cond);
+  pthread_mutex_unlock(&mtx);
+
+  //scheduling algorithm
   while (!tmpDone)
   {
-    time_t begin = 0;
-    tmpDone = 1; //assume we're tmpDone until proven otherwise
+    tmpDone = 1; //assume we're done until proven otherwise
     for (i = 0; i < NUMPROXIES/2; i++) //go through all of the subs and pubs
     {
-
       if (pubThreads[i].free == 1) //when we find a free one of the pub type,
       {
         if ( publisherFiles[currentPubFile][0] != '\0' ) //and if there is a file that needs a proxy thread at this position,
         {
           pubThreads[i].fileName = publisherFiles[currentPubFile++]; //then set it, and advance the count
           pubThreads[i].free = 0; //no longer free
-          tmpDone = 0; //we can't be tmpDone now.
+          tmpDone = 0; //we can't be done now.
 
-          pthread_mutex_lock(&mtx);
+          pthread_mutex_lock(&mtx); //have threads re-check if they have work
           pthread_cond_broadcast(&cond);
           pthread_mutex_unlock(&mtx);
-
         }
       }
       else //it is busy
-        tmpDone = 0; //we're not tmpDone
+        tmpDone = 0; //we're not done
 
       if (subThreads[i].free == 1) //when we find a free one of the sub type,
       {
@@ -133,9 +135,9 @@ int main(int argc, char **argv)
         {
           subThreads[i].fileName = subscriberFiles[currentSubFile++]; //then set it, and advance the count
           subThreads[i].free = 0; //no longer free
-          tmpDone = 0; //we can't be tmpDone now.
+          tmpDone = 0; //we can't be done now.
 
-          pthread_mutex_lock(&mtx);
+          pthread_mutex_lock(&mtx); //re-check to see if there's work
           pthread_cond_broadcast(&cond);
           pthread_mutex_unlock(&mtx);
         }
@@ -143,10 +145,11 @@ int main(int argc, char **argv)
       else //it is busy
         tmpDone = 0; //we're not tmpDone
     }
-
   }
+  //end of scheduler, we must be done
   done = 1;
 
+  //allows all threads to wake up and see that we're done and exit
   pthread_mutex_lock(&mtx);
   pthread_cond_broadcast(&cond);
   pthread_mutex_unlock(&mtx);

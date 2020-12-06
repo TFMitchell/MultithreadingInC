@@ -1,8 +1,8 @@
+//This is passed tokens from the getline operation from main (quacker.c)
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "inputHandler.h"
-
 
 void queryTopics(struct topicQueue *TQ)
 {
@@ -91,7 +91,7 @@ int inputHandler(struct topicQueue *TQ, char **tokens, char **publisherFiles, ch
   else //start
   {
     return 0;
-
   }
+  
   return 1;
 }

@@ -1,0 +1,121 @@
+==3257== Memcheck, a memory error detector
+==3257== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==3257== Using Valgrind-3.13.0 and LibVEX; rerun with -h for copyright info
+==3257== Command: ./server input.txt
+==3257== 
+Publisher #0 is ready to read from pub1.txt.
+Publisher #1 is ready to read from pub2.txt.
+Publisher #2 is ready to read from pub3.txt.
+Delta is now 5.
+Subscriber #0 is ready to read from sub1.txt.
+Subscriber #1 is ready to read from sub2.txt.
+Subscriber #2 is ready to read from sub3.txt.
+Proxy thread 100976384 - type: Publisher- Executed command: put 1 https://cdn.britannica.com/67/19367-050-885866B4/Valley-Taurus-Mountains-Turkey.jpg Taurus Mountains  
+Proxy thread 100976384 - type: Publisher - Executed command: sleep 1500 
+Proxy thread 134547200 - type: Publisher- Executed command: put 3 https://cdn.pixabay.com/photo/2018/03/07/19/51/animal-3206941_960_720.jpg friends of a goat  
+Proxy thread 134547200 - type: Publisher - Executed command: sleep 10000 
+Proxy thread 109369088 - type: Subscriber - Executed command: sleep 300
+Proxy thread 109369088 - type: Subscriber - Executed command: get 1 
+Proxy thread 109369088 - type: Subscriber - Executed command: sleep 300
+Proxy thread 117761792 - type: Publisher- Executed command: put 2 https://static.boredpanda.com/blog/wp-content/uploads/2018/07/funny-dog-balloons-ceiling-6-5b5580e05c9ef__700.jpg I tired  
+Proxy thread 117761792 - type: Publisher - Executed command: sleep 1000 
+Proxy thread 109369088 - type: Subscriber - Executed command: get 1 
+Proxy thread 109369088 - type: Subscriber - Executed command: sleep 300
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 3000
+Proxy thread 126154496 - type: Subscriber - Executed command: sleep 1000
+Proxy thread 109369088 - type: Subscriber - Executed command: get 1 
+Proxy thread 109369088 - type: Subscriber - Executed command: sleep 300
+Proxy thread 109369088 - type: Subscriber - Executed command: get 1 
+Proxy thread 109369088 - type: Subscriber - Executed command: sleep 300
+Proxy thread 109369088 - type: Subscriber - Executed command: get 1 
+Proxy thread 109369088 - type: Subscriber - Executed command: sleep 300
+Proxy thread 109369088 - type: Subscriber - Executed command: get 2 
+Proxy thread 109369088 - type: Subscriber - Executed command: sleep 300
+Proxy thread 109369088 - type: Subscriber - Executed command: get 1 
+Proxy thread 109369088 - type: Subscriber - Executed command: sleep 300
+Proxy thread 109369088 - type: Subscriber - Executed command: get 1 
+Proxy thread 109369088 - type: Subscriber - Executed command: stop
+Proxy thread 117761792 - type: Publisher- Executed command: put 2 https://static.boredpanda.com/blog/wp-content/uploads/2018/07/912262374756937728-1-png__700.jpg I'm in heaven  
+Proxy thread 117761792 - type: Publisher - Executed command: sleep 100 
+Proxy thread 100976384 - type: Publisher- Executed command: put 1 https://www.atlasandboots.com/wp-content/uploads/2019/05/feat-image-1-most-beautiful-mountains-in-the-world-820x312.jpg Pointy Mountain  
+Proxy thread 100976384 - type: Publisher - Executed command: sleep 1500 
+Proxy thread 117761792 - type: Publisher- Executed command: put 2 https://86cb8127dc14737f5057-7c0671222953158607ea93d5febd68b4.ssl.cf1.rackcdn.com/747/assets/responsive/350000/350899/dog.jpg Good dog  
+Proxy thread 117761792 - type: Publisher - Executed command: sleep 5000 
+Proxy thread 126154496 - type: Subscriber - Executed command: get 2 
+Proxy thread 126154496 - type: Subscriber - Executed command: sleep 1000
+Proxy thread 126154496 - type: Subscriber - Executed command: get 2 
+Proxy thread 126154496 - type: Subscriber - Executed command: sleep 3000
+Proxy thread 100976384 - type: Publisher- Executed command: put 1 https://www.mercurynews.com/wp-content/uploads/2017/10/sjm-l-bachelor-1022-03.jpg?w=620 Mount Bachelor  
+Proxy thread 100976384 - type: Publisher - Executed command: sleep 1500 
+Proxy thread 142939904 - type: Subscriber - Executed command: get 3 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 5000
+Proxy thread 100976384 - type: Publisher- Executed command: put 2 https://static.boredpanda.com/blog/wp-content/uploads/2018/07/5b557f4560e45_-2RQLO3QGIV9VGgpwIBSpnDKfh4V50mNGqzt2ghnlfo__700.jpg Something is up  
+Proxy thread 100976384 - type: Publisher - Executed command: sleep 1200 
+Proxy thread 100976384 - type: Publisher- Executed command: put 1 https://media-cdn.tripadvisor.com/media/photo-s/15/21/06/71/mount-shasta-2-70a.jpg Shasta  
+Proxy thread 100976384 - type: Publisher - Executed command: sleep 110 
+Proxy thread 100976384 - type: Publisher- Executed command: put 1 https://static01.nyt.com/images/2019/09/18/sports/18everest-photo/18everest-photo-articleLarge.jpg?quality=75&auto=webp&disable=upscale Everest  
+Proxy thread 100976384 - type: Publisher - Executed command: sleep 150 
+Proxy thread 100976384 - type: Publisher- Executed command: put 3 https://ichef.bbci.co.uk/news/660/cpsprodpb/C271/production/_98677794_gettyimages-486869012.jpg A goat  
+Proxy thread 100976384 - type: Publisher - Executed command: stop 
+Proxy thread 126154496 - type: Subscriber - Executed command: get 2 
+Proxy thread 126154496 - type: Subscriber - Executed command: sleep 100
+Proxy thread 126154496 - type: Subscriber - Executed command: get 2 
+Proxy thread 126154496 - type: Subscriber - Executed command: sleep 100
+Proxy thread 126154496 - type: Subscriber - Executed command: get 2 
+Proxy thread 126154496 - type: Subscriber - Executed command: sleep 3000
+Proxy thread 117761792 - type: Publisher- Executed command: put 1 https://a57.foxnews.com/static.foxnews.com/foxnews.com/content/uploads/2019/10/931/524/mount_fuji_istock.jpg?ve=1&tl=1 Mount Fuji  
+Proxy thread 117761792 - type: Publisher - Executed command: sleep 1500 
+Proxy thread 142939904 - type: Subscriber - Executed command: get 3 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 500
+Proxy thread 142939904 - type: Subscriber - Executed command: get 3 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 5000
+Proxy thread 126154496 - type: Subscriber - Executed command: get 3 
+Proxy thread 126154496 - type: Subscriber - Executed command: sleep 500
+Proxy thread 117761792 - type: Publisher- Executed command: put 1 https://www.yosemite.com/wp-content/uploads/2016/04/El-Capitan-_Yosemite-Mariposa-Slide_-Photo-by-Chris-Migeon-700x425.jpg El Cap  
+Proxy thread 117761792 - type: Publisher - Executed command: sleep 1500 
+Proxy thread 126154496 - type: Subscriber - Executed command: get 3 
+Proxy thread 126154496 - type: Subscriber - Executed command: sleep 1000
+Proxy thread 126154496 - type: Subscriber - Executed command: stop
+Proxy thread 117761792 - type: Publisher - Executed command: stop 
+Proxy thread 134547200 - type: Publisher- Executed command: put 3 https://cdn.pixabay.com/photo/2018/05/02/09/36/animal-3368102_960_720.jpg baby_goats  
+Proxy thread 134547200 - type: Publisher - Executed command: sleep 2000 
+Proxy thread 134547200 - type: Publisher- Executed command: put 3 https://cdn.pixabay.com/photo/2017/03/26/10/33/stone-goat-2175189_960_720.jpg Some goats  
+Proxy thread 134547200 - type: Publisher - Executed command: sleep 2000 
+Proxy thread 142939904 - type: Subscriber - Executed command: get 3 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 500
+Proxy thread 142939904 - type: Subscriber - Executed command: get 3 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 5000
+Proxy thread 134547200 - type: Publisher - Executed command: stop 
+Proxy thread 142939904 - type: Subscriber - Executed command: get 3 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 500
+Proxy thread 142939904 - type: Subscriber - Executed command: get 3 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 5000
+Proxy thread 142939904 - type: Subscriber - Executed command: get 1 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 500
+Proxy thread 142939904 - type: Subscriber - Executed command: get 1 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 50
+Proxy thread 142939904 - type: Subscriber - Executed command: get 2 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 5000
+Proxy thread 142939904 - type: Subscriber - Executed command: get 3 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 5000
+Proxy thread 142939904 - type: Subscriber - Executed command: get 1 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 500
+Proxy thread 142939904 - type: Subscriber - Executed command: get 2 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 5000
+Proxy thread 142939904 - type: Subscriber - Executed command: get 3 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 500
+Proxy thread 142939904 - type: Subscriber - Executed command: get 1 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 500
+Proxy thread 142939904 - type: Subscriber - Executed command: get 2 
+Proxy thread 142939904 - type: Subscriber - Executed command: sleep 500
+Proxy thread 142939904 - type: Subscriber - Executed command: get 3 
+Proxy thread 142939904 - type: Subscriber - Executed command: stop
+==3257== 
+==3257== HEAP SUMMARY:
+==3257==     in use at exit: 0 bytes in 0 blocks
+==3257==   total heap usage: 467 allocs, 467 frees, 484,960 bytes allocated
+==3257== 
+==3257== All heap blocks were freed -- no leaks are possible
+==3257== 
+==3257== For counts of detected and suppressed errors, rerun with: -v
+==3257== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
